@@ -979,3 +979,31 @@ async function loadPublicProducts() {
 
 loadPublicProducts();
 
+
+
+
+document.getElementById("checkout-button").addEventListener("click", function () {
+    if (cart.length === 0) {
+        alert("Your cart is empty.");
+        return;
+    }
+
+    let message = "Hi RNSA! 👋\n\nI'd like to place an order:\n\n";
+
+    cart.forEach(item => {
+        message += `${item.name} x${item.quantity} - R${item.price * item.quantity}\n`;
+    });
+
+    const total = cart.reduce(
+        (sum, item) => sum + (item.price * item.quantity),
+        0
+    );
+
+    message += `\nTotal: R${total}\n\nPlease let me know how to proceed with payment.`;
+
+    const phoneNumber = "27762138198";
+    const whatsappURL =
+        `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappURL, "_blank");
+});
