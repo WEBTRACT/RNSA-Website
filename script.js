@@ -1007,3 +1007,145 @@ document.getElementById("checkout-button").addEventListener("click", function ()
 
     window.open(whatsappURL, "_blank");
 });
+
+
+// ==========================================
+// GALLERY MANAGEMENT
+// ==========================================
+
+async function loadGalleryAdmin() {
+
+    const galleryList = document.getElementById("gallery-admin-list");
+
+    if (!galleryList) return;
+
+    galleryList.innerHTML = "Loading gallery...";
+
+    const { data, error } = await supabaseClient
+        .storage
+        .from("gallery-images")
+        .list("", {
+            sortBy: {
+                column: "created_at",
+                order: "desc"
+            }
+        });
+
+    if (error) {
+        console.error("Gallery load error:", error);
+        galleryList.innerHTML = "Could not load gallery.";
+        return;
+    }
+
+    galleryList.innerHTML = "";
+
+    if (!data || data.length === 0) {
+        galleryList.innerHTML = "No gallery pictures yet.";
+        return;
+    }
+
+    data.forEach(file => {
+
+        const { data: publicData } = supabaseClient
+            .storage
+            .from("gallery-images")
+            .getPublicUrl(file.name);
+
+        const item = document.createElement("div");
+
+        item.className = "gallery-admin-item";
+
+        item.innerHTML = `
+            <img
+                src="${publicData.publicUrl}"
+                alt="RNSA Gallery"
+            >
+
+            <button
+                type="button"
+                class="dashboard-secondary"
+                onclick="deleteGalleryImage('${file.name}')"
+            >
+                REMOVE
+            </button>
+        `;
+
+        galleryList.appendChild(item);
+    });
+}
+
+
+// ==========================================
+// ADD GALLERY PICTURE
+// ==========================================
+
+document.getElementById("add-photo-button")?.addEventListener("click", function () {
+
+    const fileInput = document.createElement("input");
+
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+
+    fileInput.onchange = async function () {
+
+        const file = fileInput.files[0];
+
+        if (!file) return;
+
+        const fileName = `${Date.now()}-${file.name}`;
+
+        const { error } = await supabaseClient
+            .storage
+            .from("gallery-images")
+            .upload(fileName, file);
+
+        if (error) {
+            console.error("Gallery upload error:", error);
+            alert("Could not upload picture.");
+            return;
+        }
+
+        alert("Picture added successfully.");
+
+        loadGalleryAdmin();
+    };
+
+    fileInput.click();
+
+});
+
+
+// ==========================================
+// REMOVE GALLERY PICTURE
+// ==========================================
+
+async function deleteGalleryImage(fileName) {
+
+    const confirmDelete = confirm(
+        "Are you sure you want to remove this picture?"
+    );
+
+    if (!confirmDelete) return;
+
+    const { error } = await supabaseClient
+        .storage
+        .from("gallery-images")
+        .remove([fileName]);
+
+    if (error) {
+        console.error("Gallery delete error:", error);
+        alert("Could not remove picture.");
+        return;
+    }
+
+    alert("Picture removed.");
+
+    loadGalleryAdmin();
+}
+
+
+// ==========================================
+// LOAD GALLERY ADMIN
+// ==========================================
+
+loadGalleryAdmin();
