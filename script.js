@@ -1149,3 +1149,59 @@ async function deleteGalleryImage(fileName) {
 // ==========================================
 
 loadGalleryAdmin();
+
+
+// ==========================================
+// LOAD PUBLIC GALLERY
+// ==========================================
+
+async function loadPublicGallery() {
+
+    const gallery = document.getElementById("public-gallery");
+
+    if (!gallery) return;
+
+    gallery.innerHTML = "";
+
+    const { data, error } = await supabaseClient
+        .storage
+        .from("gallery-images")
+        .list("", {
+            sortBy: {
+                column: "created_at",
+                order: "desc"
+            }
+        });
+
+    if (error) {
+        console.error("Public gallery error:", error);
+        return;
+    }
+
+    if (!data || data.length === 0) return;
+
+    data.forEach((file, index) => {
+
+        const { data: publicData } = supabaseClient
+            .storage
+            .from("gallery-images")
+            .getPublicUrl(file.name);
+
+        const galleryItem = document.createElement("div");
+
+        galleryItem.className =
+            index % 5 === 0 ? "gallery-item large" : "gallery-item";
+
+        galleryItem.innerHTML = `
+            <img
+                src="${publicData.publicUrl}"
+                alt="RNSA Event"
+            >
+        `;
+
+        gallery.appendChild(galleryItem);
+
+    });
+}
+
+loadPublicGallery();
